@@ -9,7 +9,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
   from app.models.users import User
-  from app.models.message import Message
+  from backend.app.models.messages import Message
 
 class Room(Base):
     __tablename__ = "rooms"

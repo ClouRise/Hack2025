@@ -8,7 +8,7 @@ from app.database import Base
 
 if TYPE_CHECKING:
   from app.models.rooms import Room
-  from app.models.message import Message
+  from backend.app.models.messages import Message
 
 
 class User(Base):
