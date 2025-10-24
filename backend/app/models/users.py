@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, null
+from sqlalchemy import ForeignKey, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING
 
@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[str] = mapped_column(default=lambda: str(uuid.uuid4()), primary_key=True, index=True)
-    room_id: Mapped[str] = mapped_column(ForeignKey("rooms.id"), nullable=True, unique=True)
+    id: Mapped[uuid.UUID] = mapped_column(UUID, default=uuid.uuid4, primary_key=True, index=True)
+    room_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rooms.id"), nullable=True, unique=True)
     email: Mapped[str] = mapped_column(unique=True, index=True, nullable=False) 
     hashed_password: Mapped[str] = mapped_column(nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True)

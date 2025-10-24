@@ -4,8 +4,8 @@ from datetime import datetime
 from backend.app.schemas.user import UserRead
 
 class MessageCreate(BaseModel):
-    room_id: int
-    sender_id: int
+    room_id: UUID
+    sender_id: UUID
     content: str
 
 class MessageRead(BaseModel):
