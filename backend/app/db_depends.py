@@ -1,0 +1,11 @@
+from typing import AsyncGenerator
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import async_session_maker
+
+
+async def get_async_db():
+    """
+    Предотавляет асинхронную сессию SQLAlchemy для работы с бд
+    """
+    async with async_session_maker() as session:
+        yield session
