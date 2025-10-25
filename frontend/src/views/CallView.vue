@@ -64,25 +64,6 @@ const getToken = async () => {
   return response.data
 }
 
-async function testWebSocket() {
-    const myRoom = new Room({
-      iceServers: [
-        {
-          urls: `turn:185.31.164.246:7882`
-        }
-      ]
-    }
-    )
-    const token = await getToken()
-    try {
-      console.log(token.token);
-      await myRoom.connect('ws://185.31.164.246:7880', token.token)
-      console.log('Work!!')
-    } catch (e) {
-      console.log('err0or!!', e)
-    }
-}
-
 // Присоединение к комнате
 const joinRoom = async () => {
   try {
@@ -95,7 +76,7 @@ const joinRoom = async () => {
     room.value = new Room({
       iceServers: [
         {
-          urls: `turn:185.31.164.246:7882`
+          urls: 'turn:185.31.164.246:7882'
         }
       ]
     })
@@ -159,13 +140,16 @@ const processExistingTracks = () => {
   
   // Обрабатываем локальные треки
   toRaw(room.value).localParticipant.trackPublications.forEach(publication => {
-    if (publication.track) {
-      if (publication.track.kind === Track.Kind.Video) {
-        handleLocalTrackPublished(publication)
-      } else if (publication.track.kind === Track.Kind.Audio) {
-        handleLocalTrackPublished(publication)
-      }
+    if (publication.track && publication.track.kind === Track.Kind.Video) {
+      handleLocalTrackPublished(publication)
     }
+  })
+  toRaw(room.value).remoteParticipants.forEach(participant => {
+    participant.trackPublications.forEach(publication => {
+      if (publication.track && publication.isSubscribed) {
+        handleTrackSubscribed(publication.track, publication, participant)
+      }
+    })
   })
 }
 
@@ -180,10 +164,7 @@ const handleLocalTrackPublished = (publication) => {
         publication.track.attach(element)
       }
     })
-  }else if (publication.track.kind === Track.Kind.Audio) {
-      // Обработка локального аудио
-      publication.track.attach()
-    }
+  }
 }
 
 // Обработка видео-треков
@@ -195,20 +176,25 @@ const handleTrackSubscribed = (track, publication, participant) => {
       )
       if (element) track.attach(element)
     })
-  } 
+  } else if (track.kind === Track.Kind.Audio) {
+    // ДОБАВЬТЕ ЭТО: обработка аудио для удаленных участников
+    if (participant !== room.value.localParticipant) {
+      track.attach() // воспроизводим звук удаленного участника
+    }
+  }
 }
 
 // Управление аудио/видео
 const toggleAudio = async () => {
   if (!room.value) return
   isMuted.value = !isMuted.value
-  await toRaw(toRaw(room.value)).localParticipant.setMicrophoneEnabled(!isMuted.value)
+  await toRaw(room.value).localParticipant.setMicrophoneEnabled(!isMuted.value)
 }
 
 const toggleVideo = async () => {
   if (!room.value) return
   isVideoEnabled.value = !isVideoEnabled.value
-  await toRaw(room.value).localParticipant.setCameraEnabled(isVideoEnabled.value)
+  await room.value.localParticipant.setCameraEnabled(isVideoEnabled.value)
 }
 
 // Авто-выход при размонтировании

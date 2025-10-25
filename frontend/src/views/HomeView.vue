@@ -1,6 +1,6 @@
 <template>
     <div>
-        <h1>start page</h1>
+        <h1 class="text-orange-600">Axenix <span class="text-blue-600 text-italy">Meet</span></h1>
     </div>
 </template>
 
