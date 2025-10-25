@@ -16,7 +16,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    room_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("rooms.id"), nullable=False)
+    room_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now(timezone.utc))

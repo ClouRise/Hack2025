@@ -25,4 +25,9 @@ class Room(Base):
     # Участники комнаты
     users: Mapped[list["User"]] = relationship("User", back_populates="room", foreign_keys="User.room_id")
     
-    messages: Mapped[list["Message"]] = relationship("Message", back_populates="room")
+    messages: Mapped[list["Message"]] = relationship(
+        "Message",
+        back_populates="room",
+        cascade="all, delete-orphan",
+        passive_deletes=True
+        )

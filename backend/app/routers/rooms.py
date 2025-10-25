@@ -47,3 +47,34 @@ async def create_room(room: RoomCreate, db: AsyncSession = Depends(get_async_db)
     await db.commit()
     await db.refresh(db_room)
     return db_room
+
+
+@router.delete("/{room_id}", status_code=status.HTTP_200_OK)
+async def delete_room(owner_id: uuid.UUID, room_id: uuid.UUID, db: AsyncSession = Depends(get_async_db)):
+    """
+    Удаление комнаты по ее UUID, если принадлежит ей
+    """
+    stmt_owner = select(UserModel).where(UserModel.id == owner_id, UserModel.is_active == True)
+    result_owner = await db.execute(stmt_owner)
+    db_owner = result_owner.scalar_one_or_none()
+    if db_owner is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Owner not found"
+        )
+    
+    stmt_room = select(RoomModel).where(RoomModel.id == room_id, RoomModel.owner_id == db_owner.id, RoomModel.is_active == True)
+    result_room = await db.execute(stmt_room)
+    db_room = result_room.scalar_one_or_none()
+    if db_room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found or you dont have permission"
+        )
+    
+    await db.delete(db_room)
+    await db.commit()
+    return {
+        "status": "success",
+        "message": "Room is deleted"
+        }
