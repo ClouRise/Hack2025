@@ -1,15 +1,18 @@
+import re
+from turtle import ht
 import uuid
 import jwt
+
 from app.models.rooms import Room as RoomModel
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, delete
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Cookie
+from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
 from app.models.messages import Message as MessageModel
 from app.models.users import User as UserModel
-from app.schemas.user import UserRead, UserCreate
+from app.schemas.user import UserRead, UserCreate, CreateAvatarUser
 from app.db_depends import get_async_db
-from app.auth import hash_password, create_access_token, create_refresh_token, verify_password, get_current_user
+from app.auth import REFRESH_TOKEN_EXPIRE_DAYS, hash_password, create_access_token, create_refresh_token, verify_password, get_current_user
 from app.config import SECRET_KEY, ALGORITHM
 
 
@@ -25,6 +28,30 @@ async def get_my_profile(current_user: UserModel = Depends(get_current_user)):
     Возвращает профиль
     """
     return current_user
+
+@router.put("/me/avatar", status_code=status.HTTP_200_OK)
+async def update_avatar(new_avatar: CreateAvatarUser, current_user: UserModel = Depends(get_current_user), db: AsyncSession = Depends(get_async_db)):
+    """
+    Обновление аватара
+    """
+    try:
+        current_user.avatar_data = new_avatar.avatar_data
+        await db.commit()
+        await db.refresh(current_user)
+
+        return current_user
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Fail of {e}"
+        )
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout_user(response: Response):
+    response.delete_cookie(key="refresh_token")
+    return {
+        "message": "success logout"
+    }
 
 @router.get("/{user_id}", response_model=UserRead, status_code=status.HTTP_200_OK)
 async def get_user(user_id: uuid.UUID, db: AsyncSession = Depends(get_async_db)):
@@ -59,7 +86,9 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_async_db)
     
     db_user = UserModel(
         email=user.email,
-        hashed_password=hash_password(user.password)
+        hashed_password=hash_password(user.password),
+        name=user.name,
+        avatar_data=user.avatar_data
     )
 
     db.add(db_user)
@@ -69,8 +98,9 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_async_db)
 
 @router.post("/token")
 async def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_async_db)
+    db: AsyncSession = Depends(get_async_db),
 ):
     """
     Аутентифицирует пользователя и возращает токены
@@ -87,15 +117,24 @@ async def login(
     
     access_token = create_access_token(data={"sub": user.email, "id": str(user.id)})
     refresh_token = create_refresh_token(data={"sub": user.email, "id": str(user.id)})
+
+
+    #cохранение в куках
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        max_age=REFRESH_TOKEN_EXPIRE_DAYS * 60 * 60 * 24 #7дней
+    )
+
     return {
         "access_token": access_token,
-        "refresh_token": refresh_token,
         "token_type": "bearer"
     }
 
 
 @router.post("/refresh_token")
-async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_async_db)):
+async def refresh_token(refresh_token: str = Cookie(None), db: AsyncSession = Depends(get_async_db)):
     """
     Обновляет аксес токен с помощью рефреш токена
     """
@@ -104,6 +143,9 @@ async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_async
         detail="Could not validate refresh token",
         headers={"WWW-Authenticate": "Bearer"}
     )
+    if refresh_token is None:
+        raise credentials_exception
+
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")

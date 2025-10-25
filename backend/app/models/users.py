@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import ForeignKey, UUID
+from sqlalchemy import ForeignKey, UUID, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import TYPE_CHECKING
 from app.database import Base
@@ -13,10 +13,13 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID, default=uuid.uuid4, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(nullable=False, default="Гость")
+    avatar_data: Mapped[str] = mapped_column(Text, nullable=False)
     room_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rooms.id"), nullable=True)
     email: Mapped[str] = mapped_column(unique=True, index=True, nullable=False) 
     hashed_password: Mapped[str] = mapped_column(nullable=False)
     is_active: Mapped[bool] = mapped_column(default=True)
+    
 
     # Комната, в которой находится пользователь
     room: Mapped["Room"] = relationship("Room", back_populates="users", foreign_keys=[room_id])
