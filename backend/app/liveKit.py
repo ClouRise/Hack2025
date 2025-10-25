@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from livekit.api import AccessToken, VideoGrants
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, validator, Field, field_validator
 import uuid
+
 from typing import Optional
 from app.db_depends import get_async_db
 import os
@@ -24,36 +25,41 @@ router = APIRouter(
 # }
 
 class TokenRequest(BaseModel):
-    room_id: str
-    user_id: str
+    room_name: str
+    user_id: int
     user_name: str
-    @validator("room_id", pre=False) #только после основной валидации
-    def validate_uuid(cls, value_room):
-        try:
-            return uuid.UUID(value_room)
-        except ValueError:
-            raise ValueError("This value dont validate")
-        
-    @validator("user_id", pre=False)
-    def validate_user(cls, value_user):
-        try:
-            return uuid.UUID(value_user)
-        except ValueError:
-            raise ValueError("This value dont validate")
-        
-class GuestToken(BaseModel):
-    room_id: str
-    user_id: str
-    user_name: Optional[str] = Field(default='guest')
 
-    # @validator("room_id", pre=False) #только после основной валидации
+    # @field_validator('room_name') #только после основной валидации
+    # @classmethod
     # def validate_uuid(cls, value_room):
     #     try:
     #         return uuid.UUID(value_room)
     #     except ValueError:
     #         raise ValueError("This value dont validate")
         
-    # @validator("user_id", pre=False)
+    # @field_validator('user_id')
+    # @classmethod
+    # def validate_user(cls, value_user):
+    #     try:
+    #         return uuid.UUID(value_user)
+    #     except ValueError:
+    #         raise ValueError("This value dont validate")
+        
+class GuestToken(BaseModel):
+    room_name: str
+    user_id: int
+    user_name: Optional[str] = Field(default='guest')
+
+    # @field_validator('room_name') #только после основной валидации
+    # @classmethod
+    # def validate_uuid(cls, value_room):
+    #     try:
+    #         return uuid.UUID(value_room)
+    #     except ValueError:
+    #         raise ValueError("This value dont validate")
+        
+    # @field_validator("user_id")
+    # @classmethod
     # def validate_user(cls, value_user):
     #     try:
     #         return uuid.UUID(value_user)
@@ -77,14 +83,14 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
         api_secret=secret_key
     )
 
-    nice_uuid_room = select(Room).where(Room.id == request.room_id).where(Room.is_active == True)
+    nice_uuid_room = select(Room).where(str(Room.id) == str(request.room_name)).where(Room.is_active == True)
     if nice_uuid_room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Room by {request.uuid_room} not found"
         )
 
-    grant = VideoGrants(room=str(request.room_id), room_join=True, can_publish=True, can_subscribe=True)
+    grant = VideoGrants(room=str(request.room_name), room_join=True, can_publish=True, can_subscribe=True)
 
     token.with_grants(grant)
 

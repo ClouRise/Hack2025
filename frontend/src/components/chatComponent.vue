@@ -24,7 +24,9 @@
     </div>
 </template>
 
-<script setup>
+<script>
+
+
 const props = defineProps({
     messages: Array
 })
