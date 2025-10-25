@@ -83,11 +83,26 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
         api_secret=secret_key
     )
 
-    nice_uuid_room = select(Room).where(str(Room.id) == str(request.room_name)).where(Room.is_active == True)
+    try:
+        value_room_name = uuid.UUID(request.room_name)
+    except ValueError:
+        ValueError("This value not valid")
+
+    nice_uuid_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
     if nice_uuid_room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Room by {request.uuid_room} not found"
+        )
+    
+    stmt_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
+    result_room = await db.execute(stmt_room)
+    room = result_room.scalar_one_or_none()
+
+    if room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found in system"
         )
 
     grant = VideoGrants(room=str(request.room_name), room_join=True, can_publish=True, can_subscribe=True)
@@ -103,7 +118,8 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
 
     return {
         "token": jwt,
-        "db_url": db_url
+        "db_url": db_url,
+        "room_id": str(room.id)
     }
 
 @router.post('/api/get-token-for-guest')
