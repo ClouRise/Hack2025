@@ -47,8 +47,8 @@ class TokenRequest(BaseModel):
         
 class GuestToken(BaseModel):
     room_name: str
-    user_id: int
     user_name: Optional[str] = Field(default='guest')
+    user_id: int
 
     # @field_validator('room_name') #только после основной валидации
     # @classmethod
@@ -72,8 +72,8 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
     # api_key = LIVEKIT_KONFIG["api_key"]
     # secret_key = LIVEKIT_KONFIG["secret_key"]
     # db_url = f"{LIVEKIT_KONFIG['host']}:{LIVEKIT_KONFIG['port']}"
-    api_key = os.getenv("LIVEKIT_KONFIG_API_KEY")
-    secret_key = os.getenv("LIVEKIT_KONFIG_SECRET_API_KEY")
+    api_key = os.getenv('LIVEKIT_KONFIG_API_KEY')
+    secret_key = os.getenv('LIVEKIT_KONFIG_SECRET_API_KEY')
     db_host = os.getenv("LIVEKIT_KONFIG_HOST")
     db_port = os.getenv("LIVEKIT_KONFIG_PORT")
     db_url = f"{db_host}:{db_port}"
@@ -86,13 +86,16 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
     try:
         value_room_name = uuid.UUID(request.room_name)
     except ValueError:
-        ValueError("This value not valid")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This value not valid"
+        )
 
     nice_uuid_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
     if nice_uuid_room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Room by {request.uuid_room} not found"
+            detail=f"Room by {request.room_name} not found"
         )
     
     stmt_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
@@ -105,15 +108,13 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
             detail="Room not found in system"
         )
 
-    grant = VideoGrants(room=str(request.room_name), room_join=True, can_publish=True, can_subscribe=True)
+    grant = VideoGrants(room=str(request.room_name), room_join=True, can_publish=True, can_subscribe=True, can_publish_data=True)
 
     token.with_grants(grant)
 
     token.with_name(str(request.user_name))
     token.with_identity(str(request.user_id))
 
-    # token.identity = json.dumps(request.user_id)
-    # token.name = json.dumps(request.user_name)
     jwt = token.to_jwt()
 
     return {
