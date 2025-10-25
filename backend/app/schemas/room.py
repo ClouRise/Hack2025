@@ -5,6 +5,7 @@ from datetime import datetime
 
 class RoomCreate(BaseModel):
     name: str
+    owner_id: UUID
 
 class RoomRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
