@@ -37,9 +37,8 @@ async def get_room(room_id: str, db: AsyncSession) -> Optional[RoomModel]:
 
 
 async def start_room_listener(room_id: str):
-    """Один слушатель Redis на комнату"""
     if room_id in room_listeners:
-        return  # уже запущен
+        return
 
     pubsub = redis_client.pubsub()
     await pubsub.subscribe(room_id)
@@ -94,7 +93,7 @@ async def websocket_endpoint(
     websocket.headers._list.append((b"user_id", str(user_id).encode()))
 
     await websocket.accept()
-    print(f"✅ User {user_id} connected to room {room_id}")
+    print(f"User {user_id} connected to room {room_id}")
 
     user = await get_user(user_id, db)
     if not user:

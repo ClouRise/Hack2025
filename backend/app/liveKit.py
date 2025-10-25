@@ -46,19 +46,19 @@ class GuestToken(BaseModel):
     user_id: str
     user_name: Optional[str] = Field(default='guest')
 
-    @validator("room_id", pre=False) #только после основной валидации
-    def validate_uuid(cls, value_room):
-        try:
-            return uuid.UUID(value_room)
-        except ValueError:
-            raise ValueError("This value dont validate")
+    # @validator("room_id", pre=False) #только после основной валидации
+    # def validate_uuid(cls, value_room):
+    #     try:
+    #         return uuid.UUID(value_room)
+    #     except ValueError:
+    #         raise ValueError("This value dont validate")
         
-    @validator("user_id", pre=False)
-    def validate_user(cls, value_user):
-        try:
-            return uuid.UUID(value_user)
-        except ValueError:
-            raise ValueError("This value dont validate")
+    # @validator("user_id", pre=False)
+    # def validate_user(cls, value_user):
+    #     try:
+    #         return uuid.UUID(value_user)
+    #     except ValueError:
+    #         raise ValueError("This value dont validate")
 
 
 @router.post('/api/get-token')
