@@ -1,0 +1,193 @@
+<template>
+  <div>
+    <!-- Форма входа -->
+    <div v-if="!room" class="join-form">
+      <input v-model="roomName" placeholder="Название комнаты">
+      <input v-model="userName" placeholder="Ваше имя">
+      <button @click="joinRoom" :disabled="loading">
+        {{ loading ? 'Подключение...' : 'Присоединиться' }}
+      </button>
+    </div>
+
+    <!-- Видео-конференция -->
+    <div v-else class="conference">
+      <!-- Управление -->
+      <div class="controls">
+        <button @click="toggleAudio">{{ isMuted ? '🔇' : '🎤' }}</button>
+        <button @click="toggleVideo">{{ isVideoEnabled ? '📹' : '📷' }}</button>
+        <button @click="leaveRoom" class="leave">🚪 Выйти</button>
+      </div>
+
+      <!-- Видео участников -->
+      <div class="videos">
+        <video 
+          v-for="participant in participants" 
+          :key="participant.identity"
+          ref="videoElements"
+          :data-identity="participant.identity"
+          autoplay 
+          playsinline
+          muted
+        />
+      </div>
+    </div>
+
+    <!-- Ошибка -->
+    <div v-if="error" class="error">{{ error }}</div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onUnmounted, nextTick } from 'vue'
+import { Room, RoomEvent, Track } from 'livekit-client'
+import axios from 'axios'
+
+// Состояние
+const room = ref(null)
+const participants = ref([])
+const roomName = ref('')
+const userName = ref('')
+const loading = ref(false)
+const error = ref('')
+const isMuted = ref(false)
+const isVideoEnabled = ref(true)
+const videoElements = ref([])
+
+// Получение токена от бэкенда
+const getToken = async () => {
+  const response = await axios.post('http://localhost:8000/api/token', {
+    room_name: roomName.value,
+    participant_name: userName.value,
+    participant_identity: `user_${Date.now()}`
+  })
+  return response.data
+}
+
+// Присоединение к комнате
+const joinRoom = async () => {
+  try {
+    loading.value = true
+    error.value = ''
+
+    const tokenData = await getToken()
+    
+    // Создаем и подключаем комнату
+    room.value = new Room()
+    
+    // События
+    room.value
+      .on(RoomEvent.ParticipantConnected, updateParticipants)
+      .on(RoomEvent.ParticipantDisconnected, updateParticipants)
+      .on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
+    
+    // Подключаемся
+    await room.value.connect('http://185.31.164.246:7880', tokenData.token)
+    
+    // Включаем камеру и микрофон
+    await room.value.localParticipant.enableCameraAndMicrophone()
+    
+    updateParticipants()
+
+  } catch (err) {
+    error.value = err.response?.data?.detail || err.message
+  } finally {
+    loading.value = false
+  }
+}
+
+// Выход из комнаты
+const leaveRoom = async () => {
+  if (room.value) {
+    await room.value.disconnect()
+    room.value = null
+    participants.value = []
+  }
+}
+
+// Обновление списка участников
+const updateParticipants = () => {
+  if (!room.value) return
+  
+  const allParticipants = [room.value.localParticipant, ...Array.from(room.value.participants.values())]
+  participants.value = allParticipants.map(p => ({
+    identity: p.identity,
+    name: p.name,
+    isSpeaking: p.isSpeaking
+  }))
+}
+
+// Обработка видео-треков
+const handleTrackSubscribed = (track, publication, participant) => {
+  if (track.kind === Track.Kind.Video) {
+    nextTick(() => {
+      const element = videoElements.value.find(el => 
+        el.getAttribute('data-identity') === participant.identity
+      )
+      if (element) track.attach(element)
+    })
+  }
+}
+
+// Управление аудио/видео
+const toggleAudio = async () => {
+  if (!room.value) return
+  isMuted.value = !isMuted.value
+  await room.value.localParticipant.setMicrophoneEnabled(!isMuted.value)
+}
+
+const toggleVideo = async () => {
+  if (!room.value) return
+  isVideoEnabled.value = !isVideoEnabled.value
+  await room.value.localParticipant.setCameraEnabled(isVideoEnabled.value)
+}
+
+// Авто-выход при размонтировании
+onUnmounted(() => {
+  leaveRoom()
+})
+</script>
+
+<style scoped>
+.videos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+video {
+  width: 100%;
+  height: 200px;
+  background: #000;
+  border-radius: 8px;
+}
+
+.controls {
+  margin: 20px 0;
+}
+
+button {
+  padding: 10px 15px;
+  margin: 0 5px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.leave {
+  background: #ff4444;
+  color: white;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+}
+
+.join-form input {
+  display: block;
+  margin: 10px 0;
+  padding: 10px;
+  width: 200px;
+}
+</style>
