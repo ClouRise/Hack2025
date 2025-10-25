@@ -1,8 +1,6 @@
 <template>
     <div>
-<<<<<<< Updated upstream
         <h1 class="text-orange-600">Axenix <span class="text-blue-600 text-italy">Meet</span></h1>
-=======
         <h1>start page</h1>
         
         
@@ -33,15 +31,11 @@
             </template>
 
         </AuthorizationWindow>
->>>>>>> Stashed changes
     </div>
 </template>
 
-<script>
-    export default {
-        
-    }
 <script setup>
+
 import { ref } from 'vue';
 import AuthorizationWindow from '@/components/AuthorizationWindow.vue';
 </script>

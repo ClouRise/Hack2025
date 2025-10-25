@@ -46,9 +46,9 @@ const toggleChat = ref(false)
 // Получение токена от бэкенда
 const getToken = async () => {
   const response = await axios.post('http://localhost:8000/liveKit/api/get-token', {
-    room_id: roomName.value,
+    room_name: roomName.value,
     user_name: userName.value,
-    user_id: Date.now()
+    user_id: `${Date.now()}`.toString()
   })
   console.log(response.data)
   return response.data
