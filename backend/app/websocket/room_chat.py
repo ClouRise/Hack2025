@@ -1,5 +1,7 @@
 import json
 import asyncio
+import uuid
+from datetime import datetime
 from typing import Optional
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 import redis.asyncio as redis
@@ -35,9 +37,8 @@ async def get_room(room_id: str, db: AsyncSession) -> Optional[RoomModel]:
 
 
 async def start_room_listener(room_id: str):
-    """Один слушатель Redis на комнату"""
     if room_id in room_listeners:
-        return  # уже запущен
+        return
 
     pubsub = redis_client.pubsub()
     await pubsub.subscribe(room_id)
@@ -46,17 +47,32 @@ async def start_room_listener(room_id: str):
         try:
             while True:
                 message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
-                if message:
-                    data = json.loads(message["data"])
-                    sender_id = data.get("sender_id")
-                    # Рассылаем всем участникам комнаты
-                    for conn in active_connections.get(room_id, []):
-                        # Не отправляем обратно отправителю
-                        if conn.headers.get("user_id") != str(sender_id):
-                            try:
-                                await conn.send_json(data)
-                            except Exception:
-                                pass
+                if not message:
+                    await asyncio.sleep(0.05)
+                    continue
+
+                raw_data = message.get("data")
+                if not raw_data:
+                    continue  # пропускаем пустые сообщения
+
+                try:
+                    data = json.loads(raw_data)
+                except (json.JSONDecodeError, TypeError):
+                    print(f"⚠️ Redis non-JSON message in {room_id}: {raw_data}")
+                    continue
+
+                sender_id = data.get("sender_id")
+                if not data.get("message"):
+                    continue
+
+                # Рассылаем всем участникам комнаты, кроме отправителя
+                for conn in active_connections.get(room_id, []):
+                    if conn.headers.get("user_id") != str(sender_id):
+                        try:
+                            await conn.send_json(data)
+                        except Exception as e:
+                            print(f"⚠️ Send error: {e}")
+
                 await asyncio.sleep(0.05)
         except asyncio.CancelledError:
             await pubsub.unsubscribe(room_id)
@@ -67,12 +83,17 @@ async def start_room_listener(room_id: str):
 
 
 @router.websocket("/ws/{room_id}/{user_id}")
-async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str, db: AsyncSession = Depends(get_async_db)):
+async def websocket_endpoint(
+    websocket: WebSocket,
+    room_id: str,
+    user_id: str,
+    db: AsyncSession = Depends(get_async_db)
+):
     # Сохраняем user_id в headers, чтобы потом фильтровать
     websocket.headers._list.append((b"user_id", str(user_id).encode()))
 
     await websocket.accept()
-    print(f"✅ User {user_id} connected to room {room_id}")
+    print(f"User {user_id} connected to room {room_id}")
 
     user = await get_user(user_id, db)
     if not user:
@@ -93,27 +114,37 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str, d
     try:
         while True:
             text = await websocket.receive_text()
+
+            # Формируем корректное сообщение
             msg = {
+                "message_id": str(uuid.uuid4()),
                 "sender_id": str(user.id),
-                "username": getattr(user, "username", str(user.id)),
-                "message": text
+                "username": user.email or "Anonymous",
+                "message": text or "",
+                "created_at": datetime.utcnow().isoformat()
             }
 
-            # Отправляем СЕБЕ локально сразу (без Redis-задержки)
+            # Отправляем СЕБЕ сразу (без Redis-задержки)
             await websocket.send_json(msg)
 
-            # Публикуем для других
+            # Публикуем в Redis
             await redis_client.publish(room_id, json.dumps(msg))
 
             # Сохраняем в БД
-            db_message = MessageModel(room_id=room.id, user_id=user.id, content=text)
+            db_message = MessageModel(
+                room_id=room.id,
+                user_id=user.id,
+                content=text
+            )
             db.add(db_message)
             await db.commit()
+
     except WebSocketDisconnect:
         print(f"❌ User {user_id} disconnected from room {room_id}")
     finally:
         if websocket in active_connections.get(room_id, []):
             active_connections[room_id].remove(websocket)
+
         # Если в комнате больше нет клиентов — останавливаем слушателя
         if not active_connections.get(room_id):
             listener = room_listeners.pop(room_id, None)

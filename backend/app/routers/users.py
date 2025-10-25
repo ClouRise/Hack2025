@@ -1,11 +1,11 @@
 import uuid
 import jwt
-
+from app.models.rooms import Room as RoomModel
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import OAuth2PasswordRequestForm
-
+from app.models.messages import Message as MessageModel
 from app.models.users import User as UserModel
 from app.schemas.user import UserRead, UserCreate
 from app.db_depends import get_async_db
@@ -119,4 +119,28 @@ async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_async
         raise credentials_exception
     access_token = create_access_token(data={"sub": user.email, "id": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.delete("/users/{user_id}")
+async def delete_user(user_id: str, db: AsyncSession = Depends(get_async_db)):
+    # Проверяем, есть ли у пользователя комнаты
+    stmt_rooms = select(RoomModel).where(RoomModel.owner_id == user_id)
+    result = await db.execute(stmt_rooms)
+    owned_room = result.scalar_one_or_none()
+    
+    if owned_room:
+        raise HTTPException(
+            status_code=400,
+            detail="Нельзя удалить пользователя, который является владельцем комнаты"
+        )
+    
+    # Удаляем все сообщения пользователя
+    stmt_delete_messages = delete(MessageModel).where(MessageModel.user_id == user_id)
+    await db.execute(stmt_delete_messages)
+    
+    # Удаляем пользователя
+    stmt_delete_user = delete(UserModel).where(UserModel.id == user_id)
+    await db.execute(stmt_delete_user)
+    
+    await db.commit()
+    return {"detail": "Пользователь и его сообщения успешно удалены"}
 
