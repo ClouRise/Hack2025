@@ -9,7 +9,11 @@
     ></div>
     
     <button
+<<<<<<< Updated upstream
       @click="handleClick('option1')"
+=======
+      @click="activeSlide = 'option1'"
+>>>>>>> Stashed changes
       class="flex-1 py-3 px-4 relative z-10 font-medium transition-colors"
       :class="activeSlide === 'option1' ? 'text-foreground' : 'text-gray-500'"
     >
@@ -17,7 +21,11 @@
     </button>
     
     <button
+<<<<<<< Updated upstream
       @click="handleClick('option2')"
+=======
+      @click="activeSlide = 'option2'"
+>>>>>>> Stashed changes
       class="flex-1 py-3 px-4 relative z-10 font-medium transition-colors"
       :class="activeSlide === 'option2' ? 'text-foreground' : 'text-gray-500'"
     >
@@ -26,6 +34,7 @@
   </div>
 </template>
 
+<<<<<<< Updated upstream
 <script setup>
 defineOptions({ name: 'sliderUI' })
 import e from 'cors'
@@ -47,6 +56,16 @@ const handleClick = (value) => {
 watch(() => props.modelValue, (newVal) => {
   activeSlide.value = newVal
 })
+=======
+
+<script setup>
+defineOptions({
+    name: 'sliderUI'
+})
+import { ref } from 'vue'
+
+const activeSlide = ref('option1') // начальное положение слайдера
+>>>>>>> Stashed changes
 </script>
 
 <style scoped>

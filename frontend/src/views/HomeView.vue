@@ -2,6 +2,7 @@
     <div class="relative flex justify-center items-center flex-col">
         <h1 class="text-orange-600">Axenix <span class="text-blue-600 text-italy">Meet</span></h1>
         <h1>start page</h1>
+<<<<<<< Updated upstream
     
         <AuthorizationWindow v-if="currentWindow === 'auth'">
             <template #content>
@@ -35,12 +36,34 @@
                 </inputUI>
 
                 <inputUI v-if="authType === 'option2'" type="password" placeholder="Повторите пароль">
+=======
+        
+        
+        <AuthorizationWindow>
+            <template #content>
+
+                <sliderUI>
+                    <template #option1>Вход</template>
+                    <template #option2>Регистрация</template>
+                </sliderUI>
+
+                <inputUI placeholder="Введите email">
+                    <template #label>Email</template>
+                </inputUI>
+
+                <inputUI type="password" placeholder="Придумайте пароль">
+                    <template #label>Пароль</template>
+                </inputUI>
+
+                <inputUI type="password" placeholder="Введите пароль">
+>>>>>>> Stashed changes
                     <template #label>Повторите пароль</template>
                 </inputUI>
 
             </template>
 
             <template #button>
+<<<<<<< Updated upstream
                 <buttonUI class="bg-violet-600 hover:bg-violet-700 cursor-pointer">{{ authType === 'option1' ? 'Войти' : 'Зарегистрироваться' }}</buttonUI>
             </template>
 
@@ -92,10 +115,17 @@
     </AuthorizationWindow>
 
     
+=======
+                <buttonUI>Вход</buttonUI>
+            </template>
+
+        </AuthorizationWindow>
+>>>>>>> Stashed changes
     </div>
 </template>
 
 <script setup>
+<<<<<<< Updated upstream
 import { ref, watch } from 'vue';
 import AuthorizationWindow from '@/components/AuthorizationWindow.vue';
 const authType = ref('option1')
@@ -139,6 +169,10 @@ const handleSliderChange = (value) => {
 }
 
 
+=======
+import { ref } from 'vue';
+import AuthorizationWindow from '@/components/AuthorizationWindow.vue';
+>>>>>>> Stashed changes
 </script>
 
 <style scoped>
