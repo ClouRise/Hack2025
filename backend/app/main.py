@@ -9,8 +9,7 @@ from app.websocket import room_chat
 from app.routers import messages
 from app.routers import rooms
 from app import liveKit
-from pathlib import Path 
-from fastapi.responses import HTMLResponse
+
 
 app = FastAPI(
     title="FastAPI конфа",
@@ -42,7 +41,3 @@ async def root():
     """
     return {"message": "ДОБРО ПОЖАЛОВАТЬ"}
 
-@app.get("/test_ws", response_class=HTMLResponse)
-async def test_ws():
-    file_path = Path(__file__).parent / "templates/ws_test.html"
-    return file_path.read_text(encoding="utf-8")

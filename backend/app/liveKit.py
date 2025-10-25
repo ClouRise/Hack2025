@@ -88,7 +88,7 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="This value not valid"
+            detail="Wrong valid token"
         )
 
     nice_uuid_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
