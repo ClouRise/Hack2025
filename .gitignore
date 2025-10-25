@@ -1,5 +1,9 @@
 .venv
+*venv*
+.md
 .env
+venv/lib/*
 .pyc
+.py
 __pycache__
 .Dockerignore
