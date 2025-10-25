@@ -6,12 +6,14 @@
     </div>
 </template>
 
-<script>
+<script setup>
 
 
 const props = defineProps({
     toggleChat: Boolean
 })
+
+const toggleChat = props.toggleChat
 
 </script>
 

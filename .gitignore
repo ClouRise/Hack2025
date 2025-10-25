@@ -7,6 +7,6 @@ venv/lib/*
 .py
 __pycache__
 .Dockerignore
-/venv
 /venv/
-.venv/
+/env/
+/envs/

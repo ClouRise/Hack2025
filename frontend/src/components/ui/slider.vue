@@ -9,7 +9,7 @@
     ></div>
     
     <button
-      @click="activeSlide = 'option1'"
+      @click="handleClick('option1')"
       class="flex-1 py-3 px-4 relative z-10 font-medium transition-colors"
       :class="activeSlide === 'option1' ? 'text-foreground' : 'text-gray-500'"
     >
@@ -17,7 +17,7 @@
     </button>
     
     <button
-      @click="activeSlide = 'option2'"
+      @click="handleClick('option2')"
       class="flex-1 py-3 px-4 relative z-10 font-medium transition-colors"
       :class="activeSlide === 'option2' ? 'text-foreground' : 'text-gray-500'"
     >
@@ -26,14 +26,27 @@
   </div>
 </template>
 
-
 <script setup>
-defineOptions({
-    name: 'sliderUI'
-})
-import { ref } from 'vue'
+defineOptions({ name: 'sliderUI' })
+import e from 'cors'
+import { ref, watch } from 'vue'
 
-const activeSlide = ref('option1') // начальное положение слайдера
+const props = defineProps({
+  modelValue: String
+})
+
+const emit = defineEmits(['update:modelValue', 'tryChange'])
+const activeSlide = ref(props.modelValue)
+
+// когда кликают — уведомляем родителя
+const handleClick = (value) => {
+  emit('tryChange', value)
+  emit('update:modelValue', value)
+}
+
+watch(() => props.modelValue, (newVal) => {
+  activeSlide.value = newVal
+})
 </script>
 
 <style scoped>
