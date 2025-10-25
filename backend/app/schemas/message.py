@@ -1,19 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from uuid import UUID
 from datetime import datetime
-from backend.app.schemas.user import UserRead
+
 
 class MessageCreate(BaseModel):
     room_id: UUID
-    sender_id: UUID
+    user_id: UUID
     content: str
 
 class MessageRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     room_id: UUID
-    sender: UUID
+    user_id: UUID
     content: str
-    timestamp: datetime
+    created_at: datetime
 
-    class Config:
-        orm_mode = True
