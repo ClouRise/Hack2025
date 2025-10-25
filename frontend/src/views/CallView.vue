@@ -108,10 +108,9 @@ const joinRoom = async () => {
     
     // Подключаемся
     await room.value.connect('ws://185.31.164.246:7880', tokenData.token)
-            console.log('dsgf2342342');
     // Включаем камеру и микрофон
-    //await room.value.localParticipant.enableCameraAndMicrophone()
-        console.log('dsgf');
+    await toRaw(room.value).localParticipant.enableCameraAndMicrophone()
+    
     updateParticipants()
     
   } catch (err) {
@@ -167,13 +166,13 @@ const handleTrackSubscribed = (track, publication, participant) => {
 const toggleAudio = async () => {
   if (!room.value) return
   isMuted.value = !isMuted.value
-  await room.value.localParticipant.setMicrophoneEnabled(!isMuted.value)
+  await toRaw(room.value).localParticipant.setMicrophoneEnabled(!isMuted.value)
 }
 
 const toggleVideo = async () => {
   if (!room.value) return
   isVideoEnabled.value = !isVideoEnabled.value
-  await room.value.localParticipant.setCameraEnabled(isVideoEnabled.value)
+  await toRaw(room.value).localParticipant.setCameraEnabled(isVideoEnabled.value)
 }
 
 // Авто-выход при размонтировании
