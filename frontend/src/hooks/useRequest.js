@@ -11,8 +11,10 @@ export function useRequest() {
     try {
       const response = await api.get(url, params)
       data.value = response.data;
+      return response.data; // Добавьте возврат данных
     } catch (e) {
       console.log(e);
+      throw e; // Пробрасываем ошибку дальше
     } finally {
       console.log("Success fetched!");
       loading.value = false;
@@ -23,8 +25,11 @@ export function useRequest() {
     loading.value = true;
     try {
       const response = await api.post(url, itemObj);
+      data.value = response.data;
+      return response.data; // Возвращаем данные из ответа
     } catch (e) {
       console.log(e);
+      throw e; // Пробрасываем ошибку дальше
     } finally {
       console.log("Success posted!");
       loading.value = false;
