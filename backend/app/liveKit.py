@@ -135,7 +135,7 @@ async def create_token_for_guest(request: GuestToken):
         api_secret=secret_key
     )
 
-    grant = VideoGrants(room=str(request.room_id), room_join=True, can_subscribe=True)
+    grant = VideoGrants(room=str(request.room_name), room_join=True, can_subscribe=True)
 
     token.with_grants(grant)
 
