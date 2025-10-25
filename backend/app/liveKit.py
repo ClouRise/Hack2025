@@ -83,7 +83,7 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
         api_secret=secret_key
     )
 
-    nice_uuid_room = select(Room).where(str(Room.id) == str(request.room_name)).where(Room.is_active == True)
+    nice_uuid_room = select(Room).where(str(Room.id) == str(request.room_name), Room.is_active == True)
     if nice_uuid_room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
