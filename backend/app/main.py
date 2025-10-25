@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import messages
 from app.routers import rooms
+from app import liveKit
 
 
 
@@ -24,6 +25,7 @@ app.add_middleware(
 #ПРИЛОЖЕНИЕ FASTAPI
 app.include_router(messages.router)
 app.include_router(rooms.router)
+app.include_router(liveKit.router)
 
 #КОРНЕВОЙ ЭНДПОИНТ 
 @app.get("/")
