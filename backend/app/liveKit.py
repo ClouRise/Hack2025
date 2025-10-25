@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from livekit.api import AccessToken, VideoGrants
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from pydantic import BaseModel, validator, Field
+from pydantic import BaseModel, validator, Field, field_validator
 import uuid
+
 from typing import Optional
 from app.db_depends import get_async_db
 import os
@@ -24,41 +25,46 @@ router = APIRouter(
 # }
 
 class TokenRequest(BaseModel):
-    room_id: str
-    user_id: str
+    room_name: str
+    user_id: int
     user_name: str
-    @validator("room_id", pre=False) #только после основной валидации
-    def validate_uuid(cls, value_room):
-        try:
-            return uuid.UUID(value_room)
-        except ValueError:
-            raise ValueError("This value dont validate")
+
+    # @field_validator('room_name') #только после основной валидации
+    # @classmethod
+    # def validate_uuid(cls, value_room):
+    #     try:
+    #         return uuid.UUID(value_room)
+    #     except ValueError:
+    #         raise ValueError("This value dont validate")
         
-    @validator("user_id", pre=False)
-    def validate_user(cls, value_user):
-        try:
-            return uuid.UUID(value_user)
-        except ValueError:
-            raise ValueError("This value dont validate")
+    # @field_validator('user_id')
+    # @classmethod
+    # def validate_user(cls, value_user):
+    #     try:
+    #         return uuid.UUID(value_user)
+    #     except ValueError:
+    #         raise ValueError("This value dont validate")
         
 class GuestToken(BaseModel):
-    room_id: str
-    user_id: str
+    room_name: str
+    user_id: int
     user_name: Optional[str] = Field(default='guest')
 
-    @validator("room_id", pre=False) #только после основной валидации
-    def validate_uuid(cls, value_room):
-        try:
-            return uuid.UUID(value_room)
-        except ValueError:
-            raise ValueError("This value dont validate")
+    # @field_validator('room_name') #только после основной валидации
+    # @classmethod
+    # def validate_uuid(cls, value_room):
+    #     try:
+    #         return uuid.UUID(value_room)
+    #     except ValueError:
+    #         raise ValueError("This value dont validate")
         
-    @validator("user_id", pre=False)
-    def validate_user(cls, value_user):
-        try:
-            return uuid.UUID(value_user)
-        except ValueError:
-            raise ValueError("This value dont validate")
+    # @field_validator("user_id")
+    # @classmethod
+    # def validate_user(cls, value_user):
+    #     try:
+    #         return uuid.UUID(value_user)
+    #     except ValueError:
+    #         raise ValueError("This value dont validate")
 
 
 @router.post('/api/get-token')
@@ -77,14 +83,32 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
         api_secret=secret_key
     )
 
-    nice_uuid_room = select(Room).where(Room.id == request.room_id).where(Room.is_active == True)
+    try:
+        value_room_name = uuid.UUID(request.room_name)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Wrong valid token"
+        )
+
+    nice_uuid_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
     if nice_uuid_room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Room by {request.uuid_room} not found"
+            detail=f"Room by {request.room_name} not found"
+        )
+    
+    stmt_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
+    result_room = await db.execute(stmt_room)
+    room = result_room.scalar_one_or_none()
+
+    if room is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Room not found in system"
         )
 
-    grant = VideoGrants(room=str(request.room_id), room_join=True, can_publish=True, can_subscribe=True)
+    grant = VideoGrants(room=str(request.room_name), room_join=True, can_publish=True, can_subscribe=True)
 
     token.with_grants(grant)
 
@@ -97,7 +121,8 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
 
     return {
         "token": jwt,
-        "db_url": db_url
+        "db_url": db_url,
+        "room_id": str(room.id)
     }
 
 @router.post('/api/get-token-for-guest')
@@ -113,7 +138,7 @@ async def create_token_for_guest(request: GuestToken):
         api_secret=secret_key
     )
 
-    grant = VideoGrants(room=str(request.room_id), room_join=True, can_subscribe=True)
+    grant = VideoGrants(room=str(request.room_name), room_join=True, can_subscribe=True)
 
     token.with_grants(grant)
 

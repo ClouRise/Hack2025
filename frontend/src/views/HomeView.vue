@@ -1,5 +1,6 @@
 <template>
-    <div class="relative flex justify-center items-center flex-col">
+    <div>
+<<<<<<< Updated upstream
         <h1 class="text-orange-600">Axenix <span class="text-blue-600 text-italy">Meet</span></h1>
         <h1>start page</h1>
     
@@ -45,58 +46,12 @@
             </template>
 
         </AuthorizationWindow>
-        
-        <AuthorizationWindow v-else-if="currentWindow === 'guest'">
-            <template #content>
-
-                <sliderUI 
-                v-model="userChoice"  
-                :class="showShake ? 'animate-shake' : ''"
-                @tryChange ="handleSliderChange"
-                >
-                    <template #option1 class="cursor-pointer">Создать комнату</template>
-                    <template #option2>Подключиться к комнате</template>
-                </sliderUI>
-                    
-                <inputUI v-if="userChoice === 'option2'" placeholder="Введите код или ссылку-приглашение">
-                    <template #label>Код или ссылка-приглашение</template>
-                </inputUI>
-
-                <inputUI v-if="userChoice === 'option2'" placeholder="Введите имя">
-                    <template #label>Имя</template>
-                </inputUI>
-
-                <errorAlertUI v-if="showErrorModal">Для создания комнаты вы должны быть авторизованы.</errorAlertUI>
-
-            </template> 
-
-            <template class="relative" #button>
-                <div class="flex justify-between items-center w-full">
-                    <!-- Кнопка назад -->
-                    <buttonUI 
-                        @click="currentWindow = 'auth'; authType = 'option2';"
-                        class="!bg-gray-100 hover:!bg-gray-200 cursor-pointer !text-violet-600 !shadow-none"
-                    >
-                        Авторизация
-                    </buttonUI>
-                    
-                    <!-- Кнопка продолжить -->
-                    <buttonUI class="bg-violet-600 hover:bg-violet-700 cursor-pointer">
-                        Продолжить
-                    </buttonUI>
-                </div>
-                
-            </template>
-
-            
-    </AuthorizationWindow>
-
-    
+>>>>>>> Stashed changes
     </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref } from 'vue';
 import AuthorizationWindow from '@/components/AuthorizationWindow.vue';
 const authType = ref('option1')
 const userChoice = ref('option2')
