@@ -24,7 +24,7 @@ app.add_middleware(
 #ПРИЛОЖЕНИЕ FASTAPI
 app.include_router(messages.router)
 app.include_router(rooms.router)
-# app.include_router(liveKit.router)
+app.include_router(liveKit.router)
 app.include_router(users.router)
 
 #КОРНЕВОЙ ЭНДПОИНТ 
