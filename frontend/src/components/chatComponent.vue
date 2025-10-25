@@ -24,7 +24,7 @@
     </div>
 </template>
 
-<script>
+<script setup>
 
 
 const props = defineProps({
