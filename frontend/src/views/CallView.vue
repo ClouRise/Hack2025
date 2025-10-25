@@ -2,7 +2,7 @@
   <div class="w-screen h-screen flex justify-between">
 
     <main class="w-full h-full flex flex-col" :style="(toggleChat || toggleUsers) ? 'width: calc(100% - 20%)' : ''">
-      <div class="h-full">
+      <div class="h-full w-full">
         <!-- Форма входа -->
         <div v-if="!room" class="join-form">
           <input v-model="roomName" placeholder="Название комнаты">
@@ -14,12 +14,15 @@
 
         <div v-else>
 
-          <div class="videos">
+          <div class="video-container w-full h-full p-3 gap-3">
 
-            <div class="flex justify-center flex-col items-center" v-for="participant in participants"
+            <div class="flex justify-center flex-col items-center relative video" v-for="participant in participants"
               :key="participant.identity">
-              <video ref="videoElements" :data-identity="participant.identity" autoplay playsinline muted></video>
-              <h3>{{ participant.name }}hui</h3>
+              <video class="rounded-3xl border-2 border-orange-300 w-full h-full" ref="videoElements" :data-identity="participant.identity" autoplay playsinline muted></video>
+              <div class="panel-user bg-orange-50 absolute left-5 bottom-5 flex rounded-xl border-1 gap-2 border-orange-300 px-4 items-center py-2">
+                <div :style="'background: ' + participant.connectionQualityColor"  style="border-radius: 100px; width: 10px; height: 10px;"></div>
+                <h1>{{ participant.name }}</h1>
+              </div>
             </div>
 
           </div>
@@ -79,4 +82,25 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped></style>
+<style scoped>
+.video-container{
+      display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-rows: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+.video{
+  flex: 1;
+  min-height: 0; /* Важно для пропорционального сжатия */
+}
+.video:hover .panel-user{
+  opacity: 100;
+  transition: opacity 0.2s ease-in-out;
+}
+.panel-user{
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+</style>
