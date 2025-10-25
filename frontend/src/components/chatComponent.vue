@@ -26,9 +26,4 @@
 
 <script setup>
 
-
-const props = defineProps({
-    messages: Array
-})
-const messageList = props.messages
 </script>
