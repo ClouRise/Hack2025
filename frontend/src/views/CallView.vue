@@ -56,7 +56,7 @@ const videoElements = ref([])
 // Получение токена от бэкенда
 const getToken = async () => {
   const response = await axios.post('http://localhost:8000/liveKit/api/get-token', {
-    room_name: roomName.value,
+    room_id: roomName.value,
     user_name: userName.value,
     user_id: Date.now()
   })
