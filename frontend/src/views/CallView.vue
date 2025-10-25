@@ -38,7 +38,7 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted, nextTick } from 'vue'
+import { ref, onUnmounted, nextTick, toRaw } from 'vue'
 import { Room, RoomEvent, Track } from 'livekit-client'
 import axios from 'axios'
 
@@ -55,12 +55,32 @@ const videoElements = ref([])
 
 // Получение токена от бэкенда
 const getToken = async () => {
-  const response = await axios.post('http://localhost:8000/api/token', {
+  const response = await axios.post('http://127.0.0.1:8000/liveKit/api/get-token', {
     room_name: roomName.value,
-    participant_name: userName.value,
-    participant_identity: `user_${Date.now()}`
+    user_name: userName.value,
+    user_id: Date.now()
   })
+  console.log(response.data)
   return response.data
+}
+
+async function testWebSocket() {
+    const myRoom = new Room({
+      iceServers: [
+        {
+          urls: `turn:185.31.164.246:7882`
+        }
+      ]
+    }
+    )
+    const token = await getToken()
+    try {
+      console.log(token.token);
+      await myRoom.connect('ws://185.31.164.246:7880', token.token)
+      console.log('Work!!')
+    } catch (e) {
+      console.log('err0or!!', e)
+    }
 }
 
 // Присоединение к комнате
@@ -72,7 +92,13 @@ const joinRoom = async () => {
     const tokenData = await getToken()
     
     // Создаем и подключаем комнату
-    room.value = new Room()
+    room.value = new Room({
+      iceServers: [
+        {
+          urls: `turn:185.31.164.246:7882`
+        }
+      ]
+    })
     
     // События
     room.value
@@ -81,13 +107,13 @@ const joinRoom = async () => {
       .on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
     
     // Подключаемся
-    await room.value.connect('http://185.31.164.246:7880', tokenData.token)
-    
+    await room.value.connect('ws://185.31.164.246:7880', tokenData.token)
+            console.log('dsgf2342342');
     // Включаем камеру и микрофон
-    await room.value.localParticipant.enableCameraAndMicrophone()
-    
+    //await room.value.localParticipant.enableCameraAndMicrophone()
+        console.log('dsgf');
     updateParticipants()
-
+    
   } catch (err) {
     error.value = err.response?.data?.detail || err.message
   } finally {
@@ -108,12 +134,21 @@ const leaveRoom = async () => {
 const updateParticipants = () => {
   if (!room.value) return
   
-  const allParticipants = [room.value.localParticipant, ...Array.from(room.value.participants.values())]
-  participants.value = allParticipants.map(p => ({
+  console.log(toRaw(room.value));
+  
+  const allParticipants = [room.value.localParticipant, ...Array.from(toRaw(room.value).remoteParticipants.values())]
+  console.log(allParticipants);
+  
+  participants.value = allParticipants.map(p => (
+    console.log(p.identity),
+    console.log(p.name),
+    console.log(p.isSpeaking),
+    {
     identity: p.identity,
     name: p.name,
     isSpeaking: p.isSpeaking
-  }))
+  })) 
+  
 }
 
 // Обработка видео-треков
