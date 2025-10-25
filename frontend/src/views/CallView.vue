@@ -113,7 +113,6 @@ const joinRoom = async () => {
     //await room.value.localParticipant.enableCameraAndMicrophone()
         console.log('dsgf');
     updateParticipants()
-    console.log('dsgf');
     
   } catch (err) {
     error.value = err.response?.data?.detail || err.message
@@ -137,12 +136,18 @@ const updateParticipants = () => {
   
   console.log(toRaw(room.value));
   
-  //const allParticipants = [room.value.localParticipant, ...Array.from(room.value.participants.values())]
-  /*participants.value = allParticipants.map(p => ({
+  const allParticipants = [room.value.localParticipant, ...Array.from(toRaw(room.value).remoteParticipants.values())]
+  console.log(allParticipants);
+  
+  participants.value = allParticipants.map(p => (
+    console.log(p.identity),
+    console.log(p.name),
+    console.log(p.isSpeaking),
+    {
     identity: p.identity,
     name: p.name,
     isSpeaking: p.isSpeaking
-  })) */
+  })) 
   
 }
 
