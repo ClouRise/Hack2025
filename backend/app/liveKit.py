@@ -86,13 +86,16 @@ async def create_token(request: TokenRequest, db: AsyncSession = Depends(get_asy
     try:
         value_room_name = uuid.UUID(request.room_name)
     except ValueError:
-        ValueError("This value not valid")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Wrong valid token"
+        )
 
     nice_uuid_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
     if nice_uuid_room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Room by {request.uuid_room} not found"
+            detail=f"Room by {request.room_name} not found"
         )
     
     stmt_room = select(Room).where(Room.id == value_room_name , Room.is_active == True)
