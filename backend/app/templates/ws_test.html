@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebSocket Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #messages { border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; }
+        #input { width: 80%; }
+        #send { width: 15%; }
+    </style>
+</head>
+<body>
+    <h2>WebSocket Chat Test</h2>
+    
+    <label>Room ID: <input type="text" id="roomId" value="your-room-uuid"></label>
+    <label>User ID: <input type="text" id="userId" value="your-user-uuid"></label>
+    <button id="connectBtn">Connect</button>
+    
+    <div id="messages"></div>
+    
+    <input type="text" id="input" placeholder="Enter message..." />
+    <button id="send">Send</button>
+
+    <script>
+        let ws;
+        const messagesDiv = document.getElementById('messages');
+
+        document.getElementById('connectBtn').onclick = () => {
+            const roomId = document.getElementById('roomId').value;
+            const userId = document.getElementById('userId').value;
+            if (!roomId || !userId) { alert("Enter Room ID and User ID"); return; }
+
+            ws = new WebSocket(`ws://localhost:8000/ws/${roomId}/${userId}`);
+
+            ws.onopen = () => {
+                appendMessage("Connected to WebSocket!");
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                appendMessage(`${data.username}: ${data.message}`);
+            };
+
+            ws.onclose = () => {
+                appendMessage("Disconnected from WebSocket");
+            };
+
+            ws.onerror = (err) => {
+                appendMessage("WebSocket error: " + err);
+            };
+        };
+
+        document.getElementById('send').onclick = () => {
+            const input = document.getElementById('input');
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(input.value);
+                input.value = '';
+            } else {
+                alert("WebSocket is not connected");
+            }
+        };
+
+        function appendMessage(msg) {
+            const p = document.createElement('p');
+            p.textContent = msg;
+            messagesDiv.appendChild(p);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+</html>
