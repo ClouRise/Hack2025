@@ -55,7 +55,7 @@ const videoElements = ref([])
 
 // Получение токена от бэкенда
 const getToken = async () => {
-  const response = await axios.post('http://127.0.0.1:8000/liveKit/api/get-token', {
+  const response = await axios.post('http://localhost:8000/liveKit/api/get-token', {
     room_name: roomName.value,
     user_name: userName.value,
     user_id: Date.now()
@@ -105,13 +105,12 @@ const joinRoom = async () => {
       .on(RoomEvent.ParticipantConnected, updateParticipants)
       .on(RoomEvent.ParticipantDisconnected, updateParticipants)
       .on(RoomEvent.TrackSubscribed, handleTrackSubscribed)
-    
+       .on(RoomEvent.LocalTrackPublished, handleLocalTrackPublished)
+
     // Подключаемся
     await room.value.connect('ws://185.31.164.246:7880', tokenData.token)
-            console.log('dsgf2342342');
     // Включаем камеру и микрофон
-    //await room.value.localParticipant.enableCameraAndMicrophone()
-        console.log('dsgf');
+    await toRaw(room.value).localParticipant.enableCameraAndMicrophone()
     updateParticipants()
     
   } catch (err) {
@@ -148,7 +147,43 @@ const updateParticipants = () => {
     name: p.name,
     isSpeaking: p.isSpeaking
   })) 
+
+  nextTick(() => {
+    processExistingTracks()
+  })  
   
+}
+
+const processExistingTracks = () => {
+  if (!room.value) return
+  
+  // Обрабатываем локальные треки
+  toRaw(room.value).localParticipant.trackPublications.forEach(publication => {
+    if (publication.track) {
+      if (publication.track.kind === Track.Kind.Video) {
+        handleLocalTrackPublished(publication)
+      } else if (publication.track.kind === Track.Kind.Audio) {
+        handleLocalTrackPublished(publication)
+      }
+    }
+  })
+}
+
+const handleLocalTrackPublished = (publication) => {
+  if (publication.track && publication.track.kind === Track.Kind.Video) {
+    nextTick(() => {
+      // Ищем элемент для локального участника
+      const element = videoElements.value.find(el => 
+        el.getAttribute('data-identity') === room.value.localParticipant.identity
+      )
+      if (element) {
+        publication.track.attach(element)
+      }
+    })
+  }else if (publication.track.kind === Track.Kind.Audio) {
+      // Обработка локального аудио
+      publication.track.attach()
+    }
 }
 
 // Обработка видео-треков
@@ -160,14 +195,14 @@ const handleTrackSubscribed = (track, publication, participant) => {
       )
       if (element) track.attach(element)
     })
-  }
+  } 
 }
 
 // Управление аудио/видео
 const toggleAudio = async () => {
   if (!room.value) return
   isMuted.value = !isMuted.value
-  await room.value.localParticipant.setMicrophoneEnabled(!isMuted.value)
+  await toRaw(room.value).localParticipant.setMicrophoneEnabled(!isMuted.value)
 }
 
 const toggleVideo = async () => {
