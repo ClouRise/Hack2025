@@ -1,7 +1,8 @@
 <template>
   <!-- Фон -->
     <!-- Модалка -->
-    <div class="bg-white rounded-xl p-6 w-96 max-w-full mx-4 shadow-xl">
+    <div class="relative">
+      <div class="bg-white rounded-xl p-6 w-94 max-w-96 mx-4 my-4 shadow-xl">
       <!-- Слот для контента -->
       <div class="space-y-4">
         <slot name="content"></slot>
@@ -9,8 +10,9 @@
       
       <!-- Слот для кнопки -->
       <div class="flex justify-end mt-6">
-        <slot name="button"></slot>
+        <slot name="button"> </slot>
       </div>
+    </div>
     </div>
 </template>
 
