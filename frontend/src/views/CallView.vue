@@ -4,15 +4,15 @@
     <main class="w-full h-full flex flex-col" :style="(toggleChat || toggleUsers) ? 'width: calc(100% - 20%)' : ''">
       <div class="h-full w-full">
         <!-- Форма входа -->
-        <div v-if="!room" class="join-form">
-          <input v-model="roomName" placeholder="Название комнаты">
-          <input v-model="userName" placeholder="Ваше имя">
+         <!-- <div v-if="!room" class="join-form">
+          <input v-model="store.room_id" placeholder="Название комнаты">
+          <input v-model="store.user_name" placeholder="Ваше имя">
           <button @click="joinRoom" :disabled="loading">
             {{ loading ? 'Подключение...' : 'Присоединиться' }}
           </button>
         </div>
 
-        <div v-else>
+        <div v-else>  -->
 
           <div class="video-container w-full h-full p-3 gap-3">
 
@@ -27,7 +27,7 @@
 
           </div>
 
-        </div>
+        <!-- </div> -->
       </div>
 
       <footer class="bg-violet-50 flex justify-between px-4 py-2 items-center border-t-1 border-violet-200" style="height: 100px;">
@@ -58,24 +58,31 @@
 
 
 import { useCall } from '@/hooks/useCall';
-import { onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import chatComponent from '@/components/chatComponent.vue';
 import usersComponent from '@/components/usersComponent.vue';
+import { useAppStore } from '@/stores/app';
+import { storeToRefs } from 'pinia';
 
-
-const roomName = ref('')
-const userName = ref('')
+const store = useAppStore()
+//  const roomName = ref('')
+//  const userName = ref('')
 const toggleChat = ref(false)
 const toggleUsers = ref(false)
 
+const { room_id, user_name } = storeToRefs(store)
+
 const { room,
-  participants,
   loading,
   error,
+  participants,
   isMuted,
   isVideoEnabled,
-  videoElements, joinRoom, leaveRoom, toggleAudio, toggleVideo } = useCall(roomName, userName)
+  videoElements, joinRoom, leaveRoom, toggleAudio, toggleVideo } = useCall(room_id, user_name)
 
+onMounted(() => {
+  joinRoom()
+})
 
 onUnmounted(() => {
   leaveRoom()

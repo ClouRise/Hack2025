@@ -13,11 +13,11 @@
                     <template #option2>Подключиться к комнате</template>
                 </sliderUI>
                     
-                <inputUI v-if="userChoice === 'option2'" v-model="roomCode" placeholder="Введите код или ссылку-приглашение">
+                <inputUI v-if="userChoice === 'option2'" v-model="store.room_id" placeholder="Введите код или ссылку-приглашение">
                     <template #label>Код или ссылка-приглашение</template>
                 </inputUI>
 
-                <inputUI v-if="userChoice === 'option2'" v-model="userName"  placeholder="Введите имя">
+                <inputUI v-if="userChoice === 'option2'" v-model="store.user_name"  placeholder="Введите имя">
                     <template #label>Имя</template>
                 </inputUI>
 
@@ -34,7 +34,7 @@
                         Авторизация
                     </buttonUI>
                     
-                    <buttonUI @click="handleGuestAction" class="bg-violet-600 hover:bg-violet-700 cursor-pointer">
+                    <buttonUI @click="$router.push('/call')" class="bg-violet-600 hover:bg-violet-700 cursor-pointer">
                         Продолжить
                     </buttonUI> 
                 </div>
@@ -47,6 +47,12 @@
 <script setup>
     import { ref,watch } from 'vue';
     import MainCardWindow from './MainCardWindow.vue';
+    import { useAppStore } from '@/stores/app';
+import { useCall } from '@/hooks/useCall';
+
+    const store = useAppStore()
+
+    //const {joinRoom} = useCall(store.room_id, store.user_name)
     const emit = defineEmits(['switch-to-auth'])
     const userChoice = ref('option2')
     const showShake = ref(false)

@@ -1,8 +1,11 @@
 import { ref, onUnmounted, nextTick, toRaw } from 'vue'
 import { Room, RoomEvent, Track, ParticipantEvent, ConnectionQuality } from 'livekit-client'
 import axios from 'axios'
+import { useAppStore } from '@/stores/app'
 
 export function useCall(roomName, userName) {
+
+    const store = useAppStore()
   const room = ref(null)
   const participants = ref([])
   const loading = ref(false)
@@ -14,7 +17,17 @@ export function useCall(roomName, userName) {
   // Добавляем Map для хранения качества соединения каждого участника
   const connectionQualities = ref(new Map())
 
-  const getToken = async () => {
+  const getTokenGuest = async () => {
+    const response = await axios.post('http://localhost:8000/liveKit/api/get-token-for-guest', {
+      room_name: roomName.value,
+      user_name: userName.value,
+      user_id: Date.now()
+    })
+    console.log(response.data)
+    return response.data
+  }
+
+    const getTokenLogined = async () => {
     const response = await axios.post('http://localhost:8000/liveKit/api/get-token', {
       room_name: roomName.value,
       user_name: userName.value,
@@ -29,7 +42,7 @@ export function useCall(roomName, userName) {
       loading.value = true
       error.value = ''
 
-      const tokenData = await getToken()
+      const tokenData = await getTokenGuest()
       
       room.value = new Room({
         iceServers: [
@@ -207,6 +220,7 @@ export function useCall(roomName, userName) {
     }
   })
 
+  store.participants = participants
   return {
     room,
     participants,
